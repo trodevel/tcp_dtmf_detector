@@ -65,7 +65,7 @@ INCL = -I$(BOOST_INC) -I.
 
 STATICLIB=$(LIBNAME).a
 
-SRCC = tcp_dtmf_detector.cpp
+SRCC = tcp_dtmf_detector.cpp stream_dtmf_detector.cpp
 OBJS = $(patsubst %.cpp,$(OBJDIR)/%.o,$(SRCC))
 
 LIB_NAMES = utils tcp_data_receiver dtmf_detector

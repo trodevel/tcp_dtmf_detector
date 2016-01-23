@@ -1,6 +1,6 @@
 /*
 
-TCP Data Receiver example
+TCP DTMF detector example
 
 Copyright (C) 2016 Sergey Kolevatov
 
@@ -19,12 +19,11 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 3246 $ $Date:: 2016-01-22 #$ $Author: serge $
+// $Revision: 3260 $ $Date:: 2016-01-23 #$ $Author: serge $
 
 #include <iostream>
 #include <thread>               // std::thread
 #include <functional>           // std::bind
-#include <sstream>              // std::stringstream
 
 #include "tcp_dtmf_detector.h"  // tcp_dtmf_detector
 #include "../dtmf_detector/IDtmfDetectorCallback.hpp"   // IDtmfDetectorCallback
@@ -43,17 +42,27 @@ int main( int argc, char* argv[] )
 {
     try
     {
-        if( argc != 2 )
+        if( argc != 2 && argc != 3 )
         {
-            std::cerr << "Usage: " << argv[0] << " <port>" << std::endl;
+            std::cerr << "Usage: " << argv[0] << " <port> <sampling_rate>" << std::endl;
             return 1;
         }
 
+        uint16_t port = atoi( argv[1] );
+        uint32_t rate = 8000;
+
+        if( argc == 3 )
+        {
+            rate = atoi( argv[2] );
+        }
+
+        std::cout << "listening on port " << port << ", sampling rate " << rate << std::endl;
+
         Callback r;
 
-        tcp_dtmf_detector::TcpDtmfDetector s;
+        tcp_dtmf_detector::TcpDtmfDetector s( rate );
 
-        s.init( &r, atoi( argv[1] ) );
+        s.init( &r, port );
 
         auto t = std::thread( std::bind( &tcp_dtmf_detector::TcpDtmfDetector::worker, &s ) );
 

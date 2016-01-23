@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 3251 $ $Date:: 2016-01-22 #$ $Author: serge $
+// $Revision: 3254 $ $Date:: 2016-01-23 #$ $Author: serge $
 
 #include "tcp_dtmf_detector.h"      // self
 
@@ -27,8 +27,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "../tcp_data_receiver/i_data_receiver.h"       // IDataReceiver
 #include "../tcp_data_receiver/tcp_data_receiver.h"     // TcpDataReceiver
-#include "../dtmf_detector/IDtmfDetectorCallback.hpp"   // dtmf::IDtmfDetectorCallback
-#include "../dtmf_detector/DtmfDetector.hpp"            // dtmf::DtmfDetector
+#include "stream_dtmf_detector.h"                       // StreamDtmfDetector
 #include "../utils/dummy_logger.h"      // dummy_log
 
 #define MODULENAME      "TcpDtmfDetector"
@@ -36,13 +35,11 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 namespace tcp_dtmf_detector
 {
 
-static const int BUFLEN = 512;
-
 class TcpDtmfDetectorImpl: public tcp_data_receiver::IDataReceiver
 {
 public:
-    TcpDtmfDetectorImpl():
-        detector_( BUFLEN, 16000 )
+    TcpDtmfDetectorImpl( uint32_t sampling_rate ):
+        detector_( sampling_rate )
     {
     }
 
@@ -55,7 +52,7 @@ public:
             dummy_log_fatal( MODULENAME, "cannot init server" );
         }
 
-        detector_.init_callback( callback );
+        detector_.init( callback );
 
         dummy_log_info( MODULENAME, "inited: OK, port %u", port );
 
@@ -75,51 +72,27 @@ public:
     // tcp_data_receiver::IDataReceiver
     virtual void on_received( uint32_t size, const char *data )
     {
-        //std::cout << "receiving ... got " << buff_.size() << std::endl;
-
         if( size > 0 )
         {
-            buff_.insert( buff_.end(), data, data + size );
-
-            auto buf_size = buff_.size();
-
-            if( buf_size >= BUFLEN * 2 )
-            {
-                detector_.process( reinterpret_cast<int16_t*>( &buff_[0] ) );
-
-                auto rest_size = buf_size - BUFLEN;
-
-                if( rest_size > 0 )
-                {
-                    // move unprocessed elements to the beginning
-                    buff_.erase( buff_.begin(), buff_.begin() + rest_size );
-                }
-
-                buff_.resize( rest_size );
-            }
+            detector_.process( size, data );
         }
         else
         {
-            buff_.resize( 0 );
-
-            //detector_.reset();    // TODO reset() not implemented yet
+            detector_.reset();
         }
     }
 
 private:
 
-    std::vector<char>           buff_;
-
     tcp_data_receiver::Server   serv_;
 
-    dtmf::DtmfDetector          detector_;
-
+    StreamDtmfDetector          detector_;
 };
 
 
-TcpDtmfDetector::TcpDtmfDetector()
+TcpDtmfDetector::TcpDtmfDetector( uint32_t sampling_rate )
 {
-    impl_   = new TcpDtmfDetectorImpl;
+    impl_   = new TcpDtmfDetectorImpl( sampling_rate );
 }
 
 TcpDtmfDetector::~TcpDtmfDetector()

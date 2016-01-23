@@ -1,6 +1,6 @@
 /*
 
-TCP DTMF decoder
+Stream DTMF decoder
 
 Copyright (C) 2016 Sergey Kolevatov
 
@@ -19,40 +19,41 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 3252 $ $Date:: 2016-01-23 #$ $Author: serge $
+// $Revision: 3257 $ $Date:: 2016-01-23 #$ $Author: serge $
 
-#ifndef TCP_DTMF_DETECTOR_H
-#define TCP_DTMF_DETECTOR_H
+#ifndef STREAM_DTMF_DETECTOR_H
+#define STREAM_DTMF_DETECTOR_H
 
-#include <cstdint>      // uint32_t
+#include <vector>
+#include <mutex>                    // std::mutex
 
-namespace dtmf
-{
-class IDtmfDetectorCallback;
-}
+#include "../dtmf_detector/DtmfDetector.hpp"            // dtmf::DtmfDetector
 
 namespace tcp_dtmf_detector
 {
 
-class TcpDtmfDetectorImpl;
-
-class TcpDtmfDetector
+class StreamDtmfDetector
 {
 public:
-    TcpDtmfDetector( uint32_t sampling_rate );
-    ~TcpDtmfDetector();
+    StreamDtmfDetector( uint32_t sampling_rate );
 
-    bool init( dtmf::IDtmfDetectorCallback * callback, unsigned short port );
-    void shutdown();
-    void worker();
+    bool init( dtmf::IDtmfDetectorCallback * callback );
+
+    void process( uint32_t size, const char *data );
+
+    void reset();
 
 private:
+    void process_buffer();
 
 private:
+    mutable std::mutex          mutex_;
 
-    TcpDtmfDetectorImpl * impl_;
+    std::vector<char>           buff_;
+
+    dtmf::DtmfDetector          detector_;
 };
 
 } // namespace tcp_dtmf_detector
 
-#endif  // TCP_DTMF_DETECTOR_H
+#endif  // STREAM_DTMF_DETECTOR_H
