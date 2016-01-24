@@ -19,16 +19,18 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 3254 $ $Date:: 2016-01-23 #$ $Author: serge $
+// $Revision: 3270 $ $Date:: 2016-01-24 #$ $Author: serge $
 
 #include "tcp_dtmf_detector.h"      // self
 
-#include <vector>
+#include <mutex>                    // std::mutex
+
+#include "../dtmf_detector/DtmfDetector.hpp"            // dtmf::DtmfDetector
 
 #include "../tcp_data_receiver/i_data_receiver.h"       // IDataReceiver
 #include "../tcp_data_receiver/tcp_data_receiver.h"     // TcpDataReceiver
-#include "stream_dtmf_detector.h"                       // StreamDtmfDetector
 #include "../utils/dummy_logger.h"      // dummy_log
+#include "../utils/mutex_helper.h"      // MUTEX_SCOPE_LOCK
 
 #define MODULENAME      "TcpDtmfDetector"
 
@@ -52,7 +54,7 @@ public:
             dummy_log_fatal( MODULENAME, "cannot init server" );
         }
 
-        detector_.init( callback );
+        detector_.init_callback( callback );
 
         dummy_log_info( MODULENAME, "inited: OK, port %u", port );
 
@@ -74,19 +76,28 @@ public:
     {
         if( size > 0 )
         {
-            detector_.process( size, data );
+            if( size > 2 )
+            {
+                MUTEX_SCOPE_LOCK( mutex_ );
+
+                detector_.process( reinterpret_cast<const int16_t*>( data ), size / 2 );
+            }
         }
         else
         {
-            detector_.reset();
+            MUTEX_SCOPE_LOCK( mutex_ );
+
+            //detector_.reset();    // TODO reset() not implemented yet
         }
     }
 
 private:
 
+    mutable std::mutex          mutex_;
+
     tcp_data_receiver::Server   serv_;
 
-    StreamDtmfDetector          detector_;
+    dtmf::DtmfDetector          detector_;
 };
 
 
