@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-// $Revision: 3270 $ $Date:: 2016-01-24 #$ $Author: serge $
+// $Revision: 3271 $ $Date:: 2016-01-24 #$ $Author: serge $
 
 #include "tcp_dtmf_detector.h"      // self
 
@@ -76,7 +76,7 @@ public:
     {
         if( size > 0 )
         {
-            if( size > 2 )
+            if( size >= 2 )
             {
                 MUTEX_SCOPE_LOCK( mutex_ );
 
